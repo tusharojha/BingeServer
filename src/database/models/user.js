@@ -3,6 +3,9 @@ const mongoose = require("mongoose");
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
+// Project Imports
+const {TOKEN_SALT} = require("./../../config/config");
+
 const UserSchema = mongoose.Schema({
   username: {
     type: String,
@@ -50,7 +53,7 @@ UserSchema.methods.generateAuthToken = function () {
   var user = this;
   var access = "auth";
   var token = jwt
-    .sign({ _id: user._id.toHexString(), access }, "slkfjslkfjsdlkfjs")
+    .sign({ _id: user._id.toHexString(), access }, TOKEN_SALT)
     .toString();
   user.tokens.push({ access, token });
 

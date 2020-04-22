@@ -5,8 +5,8 @@ const bodyParser = require("body-parser");
 // Project Imports
 const routes = require("./src/routes");
 const database = require("./src/database/connect");
+const {PORT} = require("./src/config/config")
 
-const port = process.env.PORT || 3000;
 const app = express();
 app.use(bodyParser.json());
 
@@ -16,6 +16,6 @@ database.connectDB();
 // setup routes for the server
 app.use("/", routes);
 
-app.listen(port, () => {
-  console.log(`listening to port ${port}`);
+app.listen(PORT, () => {
+  console.log(`listening to port ${PORT}`);
 });
