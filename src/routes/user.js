@@ -13,13 +13,21 @@ router.post("/", (req, res) => {
     "name",
     "password",
   ]);
-  User({
+  var user = User({
     username,
     name,
     password,
-  })
+  });
+
+  user
     .save()
-    .then((doc) => res.status(201).send(_.pick(doc, ["_id", "username", "name"])))
+    .then(() => user.generateAuthToken())
+    .then((token) =>
+      res
+        .status(201)
+        .header("x-auth", token)
+        .send(_.pick(user, ["_id", "username", "name"]))
+    )
     .catch((e) => res.status(400).send(e));
 });
 

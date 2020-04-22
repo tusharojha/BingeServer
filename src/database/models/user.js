@@ -45,6 +45,19 @@ const UserSchema = mongoose.Schema({
   ],
 });
 
+// generating auth token\
+UserSchema.methods.generateAuthToken = function () {
+  var user = this;
+  var access = "auth";
+  var token = jwt
+    .sign({ _id: user._id.toHexString(), access }, "slkfjslkfjsdlkfjs")
+    .toString();
+  user.tokens.push({ access, token });
+
+  return user.save().then(() => token);
+};
+
+// Hashing User Password | Security
 UserSchema.pre("save", function (next) {
   var user = this;
   try {
