@@ -45,7 +45,7 @@ const UserSchema = mongoose.Schema({
   ],
 });
 
-// generating auth token\
+// generating auth token
 UserSchema.methods.generateAuthToken = function () {
   var user = this;
   var access = "auth";
