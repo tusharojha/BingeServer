@@ -4,6 +4,7 @@ const socketIO = require("socket.io");
 // Project Imports
 const { CREATE_ROOM, JOIN_ROOM, EXIT_USER } = require("./events");
 const { authenticateSocket } = require("./../middlewares/authenticate");
+const { Room } = require("../database/models/models");
 
 const createRoomName = () =>
   Math.floor(100000 + Math.random() * 90000000).toString();
@@ -40,26 +41,47 @@ const connectSockets = (server) => {
             io.nsps["/"].adapter.rooms[randomRoom] === undefined ||
             io.nsps["/"].adapter.rooms[randomRoom].length < 1
           ) {
-            socket.join(randomRoom, (err) => {
-              if (!err) {
-                console.log("ROOM CREATED: ", randomRoom);
-                socket.user = user;
-                // console.log(io.nsps["/"].adapter.rooms[randomRoom].length);
-                callback({
-                  status: 201,
-                  message: "New room created",
-                  data: {
-                    roomName: randomRoom,
-                    user: {
-                      id: user._id,
-                      name: user.name,
-                      avatar: user.avatar,
-                    },
-                  },
+            Room.findOne({ "users.id": user._id.toString() }).then((doc) => {
+              if (doc == null) {
+                socket.join(randomRoom, (err) => {
+                  if (!err) {
+                    socket.user = user;
+                    var room = Room({
+                      roomName: randomRoom,
+                      users: [
+                        { id: user._id, name: user.name, avatar: user.avatar },
+                      ],
+                    });
+                    room
+                      .save()
+                      .then(() => {
+                        console.log("ROOM CREATED: ", randomRoom);
+                        callback({
+                          status: 201,
+                          message: "New room created",
+                          data: {
+                            roomName: randomRoom,
+                            user: {
+                              id: user._id,
+                              name: user.name,
+                              avatar: user.avatar,
+                            },
+                          },
+                        });
+                      })
+                      .catch((err) => {
+                        console.log("Error: ", err);
+                        callback({ status: 501, message: err });
+                      });
+                    // console.log(io.nsps["/"].adapter.rooms[randomRoom].length);
+                  } else {
+                    console.log(err);
+                    callback({ status: 501, message: "Error creating room" });
+                  }
                 });
               } else {
-                console.log(err);
-                callback({ status: 501, message: "Error creating room" });
+                console.log("User is already in a room!");
+                callback({ status: 400, message: "User is already in a room" });
               }
             });
           } else {

@@ -1,3 +1,5 @@
+// Project Imports
 const User = require("./user");
+const Room = require("./room");
 
-module.exports = { User };
+module.exports = { User, Room };
