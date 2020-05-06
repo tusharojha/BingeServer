@@ -20,15 +20,15 @@ const connectSockets = (server) => {
       if (socket.user != null) console.log(`${socket.user.name} disconnected`);
       else console.log("User Disconnected");
 
-    //   if (socket.rooms != null) {
-    //     var rooms = socket.rooms;
-    //     // remove the default room from the list
-    //     rooms.splice(0, 1);
+      //   if (socket.rooms != null) {
+      //     var rooms = socket.rooms;
+      //     // remove the default room from the list
+      //     rooms.splice(0, 1);
 
-    //     rooms.forEach((room) => {
-    //       socket.to(room).emit(EXIT_USER, { name: user.name, id: user._id });
-    //     });
-    //   }
+      //     rooms.forEach((room) => {
+      //       socket.to(room).emit(EXIT_USER, { name: user.name, id: user._id });
+      //     });
+      //   }
     });
 
     // CREATE_ROOM event added with authentication
@@ -45,7 +45,18 @@ const connectSockets = (server) => {
                 console.log("ROOM CREATED: ", randomRoom);
                 socket.user = user;
                 // console.log(io.nsps["/"].adapter.rooms[randomRoom].length);
-                callback({ status: 201, message: "New room created" });
+                callback({
+                  status: 201,
+                  message: "New room created",
+                  data: {
+                    roomName: randomRoom,
+                    user: {
+                      id: user._id,
+                      name: user.name,
+                      avatar: user.avatar,
+                    },
+                  },
+                });
               } else {
                 console.log(err);
                 callback({ status: 501, message: "Error creating room" });
@@ -76,7 +87,30 @@ const connectSockets = (server) => {
                 if (!err) {
                   console.log("ROOM JOINED by ", user.name);
                   socket.user = user;
-                  socket.to(roomName).broadcast.emit(`${user.name} Joined`);
+                  socket.to(roomName).broadcast.emit({
+                    message: `${user.name} Joined`,
+                    user: {
+                      id: user._id,
+                      name: user.name,
+                      avatar: user.avatar,
+                    },
+                  });
+                  console.log(
+                    "room details",
+                    io.nsps["/"].adapter.rooms[roomName]
+                  );
+                  io.in(roomName).clients(function (error, clients) {
+                    var numClients = clients.length;
+                    console.log(clients);
+                    for (var clientId in clients) {
+                      //this is the socket of each client in the room.
+                      var clientSocket = io.sockets.connected[clientId];
+
+                      //you can do whatever you need with this
+                      console.log(clientSocket);
+                    }
+                  });
+                  // TODO: send the list of users present in the room
                   callback({
                     status: 200,
                     message: "Room Joined successfully",
