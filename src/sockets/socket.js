@@ -46,7 +46,7 @@ const connectSockets = (server) => {
                       // TODO: remove this console statement after testing
                       console.log(`${socket.user.name} disconnected`);
                       // Notifing the members that the user left
-                      socket.to(doc.roomName).emit(MEMBER_LEFT, {
+                      socket.to(socket.roomName).broadcast.emit(MEMBER_LEFT, {
                         status: 200,
                         user: {
                           id: socket.user._id,
@@ -108,6 +108,7 @@ const connectSockets = (server) => {
                 socket.join(randomRoom, (err) => {
                   if (!err) {
                     socket.user = user;
+                    socket.roomName = randomRoom;
                     var room = Room({
                       roomName: randomRoom,
                       users: [
@@ -194,6 +195,7 @@ const connectSockets = (server) => {
                         .then((newDoc) => {
                           console.log("ROOM JOINED by ", user.name);
                           socket.user = user;
+                          socket.roomName = roomName;
                           // Notifies existing room members about the new joining
                           socket.to(roomName).broadcast.emit(MEMBER_JOINED, {
                             message: `${user.name} Joined`,
