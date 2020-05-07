@@ -6,6 +6,8 @@ const listenrs = {
 
 const emits = {
   EXIT_ROOM: "exit user",
+  MEMBER_LEFT: "member left",
+  MEMBER_JOINED: "member joined"
 };
 
 module.exports = { ...listenrs, ...emits };

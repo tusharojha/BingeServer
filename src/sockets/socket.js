@@ -2,10 +2,16 @@
 const socketIO = require("socket.io");
 
 // Project Imports
-const { CREATE_ROOM, JOIN_ROOM, EXIT_USER } = require("./events");
+const {
+  CREATE_ROOM,
+  JOIN_ROOM,
+  MEMBER_LEFT,
+  MEMBER_JOINED,
+} = require("./events");
 const { authenticateSocket } = require("./../middlewares/authenticate");
 const { Room } = require("../database/models/models");
 
+// Method for generating 8 digit room name
 const createRoomName = () =>
   Math.floor(100000 + Math.random() * 90000000).toString();
 
@@ -18,31 +24,87 @@ const connectSockets = (server) => {
 
     // User Disconnected
     socket.on("disconnect", () => {
-      if (socket.user != null) console.log(`${socket.user.name} disconnected`);
-      else console.log("User Disconnected");
-
-      //   if (socket.rooms != null) {
-      //     var rooms = socket.rooms;
-      //     // remove the default room from the list
-      //     rooms.splice(0, 1);
-
-      //     rooms.forEach((room) => {
-      //       socket.to(room).emit(EXIT_USER, { name: user.name, id: user._id });
-      //     });
-      //   }
+      // check if user was connect to any room
+      if (socket.user != null) {
+        // finding the room in which user is present
+        Room.findOne({ "users.id": socket.user._id })
+          .then((doc) => {
+            if (doc != null) {
+              // if number of room members is more than 1, it means someone is still in the room
+              if (doc.users.length > 1) {
+                // pulling out the user from the room
+                Room.updateOne(
+                  { "users.id": socket.user._id },
+                  {
+                    $pull: {
+                      users: { id: socket.user._id.toString() },
+                    },
+                  }
+                )
+                  .then((doc) => {
+                    if (doc != null) {
+                      // TODO: remove this console statement after testing
+                      console.log(`${socket.user.name} disconnected`);
+                      // Notifing the members that the user left
+                      socket.to(doc.roomName).emit(MEMBER_LEFT, {
+                        status: 200,
+                        user: {
+                          id: socket.user._id,
+                          name: socket.user.name,
+                          avatar: socket.user.avatar,
+                        },
+                      });
+                    } else {
+                      console.log("Error while removing user from db", err);
+                    }
+                  })
+                  .catch((err) => {
+                    console.log("Error while updating:", doc);
+                  });
+              } else {
+                // If user was the last member of the room, we free up space by deleting the room.
+                Room.deleteOne({ _id: doc._id })
+                  .then((doc) => {
+                    // TODO: Delete this if-else clause after testing.
+                    if (doc != null) {
+                      console.log("Room Deleted Successfully");
+                    } else {
+                      console.log("Unable to delete room");
+                    }
+                  })
+                  .catch((err) => {
+                    console.log("Error while deleting room:", err);
+                  });
+              }
+            } else {
+              // TODO: Remove this else clause after testing
+              console.log("User was not in any room, Disconnected...");
+            }
+          })
+          .catch((err) => {
+            console.log("Disconnecting Error:", err);
+          });
+      } else {
+        console.log("User Disconnected");
+      }
     });
 
     // CREATE_ROOM event added with authentication
     socket.on(CREATE_ROOM, (data, callback) => {
+      // authenticating user
       authenticateSocket(data)
         .then((user) => {
+          // generating a random room name
           var randomRoom = createRoomName();
+          // check if room is not already taken
           if (
             io.nsps["/"].adapter.rooms[randomRoom] === undefined ||
             io.nsps["/"].adapter.rooms[randomRoom].length < 1
           ) {
+            // checking if user was not already in a room
             Room.findOne({ "users.id": user._id.toString() }).then((doc) => {
               if (doc == null) {
+                // creating the room & saving to database
                 socket.join(randomRoom, (err) => {
                   if (!err) {
                     socket.user = user;
@@ -73,14 +135,12 @@ const connectSockets = (server) => {
                         console.log("Error: ", err);
                         callback({ status: 501, message: err });
                       });
-                    // console.log(io.nsps["/"].adapter.rooms[randomRoom].length);
                   } else {
                     console.log(err);
                     callback({ status: 501, message: "Error creating room" });
                   }
                 });
               } else {
-                console.log("User is already in a room!");
                 callback({ status: 400, message: "User is already in a room" });
               }
             });
@@ -121,15 +181,12 @@ const connectSockets = (server) => {
                       Room.findOneAndUpdate(
                         { roomName: roomName },
                         {
-                          $set: {
-                            users: [
-                              ...doc.users,
-                              {
-                                id: user._id,
-                                name: user.name,
-                                avatar: user.avatar,
-                              },
-                            ],
+                          $addToSet: {
+                            users: {
+                              id: user._id,
+                              name: user.name,
+                              avatar: user.avatar,
+                            },
                           },
                         },
                         { new: true }
@@ -138,7 +195,7 @@ const connectSockets = (server) => {
                           console.log("ROOM JOINED by ", user.name);
                           socket.user = user;
                           // Notifies existing room members about the new joining
-                          socket.to(roomName).broadcast.emit({
+                          socket.to(roomName).broadcast.emit(MEMBER_JOINED, {
                             message: `${user.name} Joined`,
                             user: {
                               id: user._id,
