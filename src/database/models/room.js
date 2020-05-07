@@ -1,6 +1,22 @@
 // Library Imports
 const mongoose = require("mongoose");
 
+const userRoomSchema = mongoose.Schema({
+  id: {
+    type: String,
+    require: true,
+    unique: true,
+  },
+  name: {
+    type: String,
+    require: true,
+  },
+  avatar: {
+    type: Number,
+    require: true,
+  },
+});
+
 const RoomSchema = mongoose.Schema({
   roomName: {
     type: String,
@@ -19,23 +35,7 @@ const RoomSchema = mongoose.Schema({
     require: false,
     default: null,
   },
-  users: [
-    {
-      id: {
-        type: String,
-        require: true,
-        unique: true,
-      },
-      name: {
-        type: String,
-        require: true,
-      },
-      avatar: {
-        type: Number,
-        require: true,
-      },
-    },
-  ],
+  users: [userRoomSchema],
 });
 
 const Room = mongoose.model("rooms", RoomSchema);
