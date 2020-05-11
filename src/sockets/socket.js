@@ -14,7 +14,7 @@ const { SocketRoutes } = require("./routes");
 
 // Method for generating 8 digit room name
 const createRoomName = () =>
-  Math.floor(100000 + Math.random() * 90000000).toString();
+  Math.floor(10000000 + Math.random() * 90000000).toString();
 
 const connectSockets = (server) => {
   var io = socketIO(server);
@@ -25,7 +25,7 @@ const connectSockets = (server) => {
 
     // Socket Routes for gameplay
     SocketRoutes(socket);
-    
+
     // User Disconnected
     socket.on("disconnect", () => {
       // check if user was connect to any room
@@ -115,6 +115,7 @@ const connectSockets = (server) => {
                     socket.roomName = randomRoom;
                     var room = Room({
                       roomName: randomRoom,
+                      host: user._id,
                       users: [
                         { id: user._id, name: user.name, avatar: user.avatar },
                       ],
