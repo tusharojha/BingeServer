@@ -1,9 +1,10 @@
 // Library Imports
 var mongoose = require("mongoose");
+const { MongoDBUrl } = require("./../config/config");
 
 const connectDB = () => {
   mongoose
-    .connect("mongodb://localhost:27017/Binge", {
+    .connect(MongoDBUrl, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       useCreateIndex: true,

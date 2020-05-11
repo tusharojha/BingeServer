@@ -10,6 +10,7 @@ const {
 } = require("./events");
 const { authenticateSocket } = require("./../middlewares/authenticate");
 const { Room } = require("../database/models/models");
+const { SocketRoutes } = require("./routes");
 
 // Method for generating 8 digit room name
 const createRoomName = () =>
@@ -22,6 +23,9 @@ const connectSockets = (server) => {
   io.on("connection", (socket) => {
     console.log("New User Connected ");
 
+    // Socket Routes for gameplay
+    SocketRoutes(socket);
+    
     // User Disconnected
     socket.on("disconnect", () => {
       // check if user was connect to any room
