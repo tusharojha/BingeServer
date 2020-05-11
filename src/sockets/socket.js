@@ -24,7 +24,7 @@ const connectSockets = (server) => {
     console.log("New User Connected ");
 
     // Socket Routes for gameplay
-    SocketRoutes(socket);
+    SocketRoutes(socket, io);
 
     // User Disconnected
     socket.on("disconnect", () => {

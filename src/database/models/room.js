@@ -36,7 +36,6 @@ const RoomSchema = mongoose.Schema({
   },
   host: {
     type: String,
-    unique: true,
     require: true,
   },
   remainingNumbers: {
