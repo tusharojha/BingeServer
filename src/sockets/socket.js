@@ -117,7 +117,7 @@ const connectSockets = (server) => {
                       roomName: randomRoom,
                       host: user._id,
                       users: [
-                        { id: user._id, name: user.name, avatar: user.avatar },
+                        { id: user._id, name: user.name, avatar: user.avatar, socketID: socket.id },
                       ],
                     });
                     room
@@ -192,6 +192,7 @@ const connectSockets = (server) => {
                               id: user._id,
                               name: user.name,
                               avatar: user.avatar,
+                              socketID: socket.id,
                             },
                           },
                         },

@@ -24,6 +24,10 @@ const userRoomSchema = mongoose.Schema({
     type: Number,
     require: true,
   },
+  socketID: {
+    type: String,
+    require: true,
+  },
 });
 
 const RoomSchema = mongoose.Schema({

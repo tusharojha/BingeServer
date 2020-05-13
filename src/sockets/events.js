@@ -11,6 +11,7 @@ const emits = {
   MEMBER_JOINED: "member joined",
   GAME_STARTED: "game started",
   BOARD_SET_TIMEOUT: "board set timeout",
+  FIRST_MOVE: "first move",
 };
 
 module.exports = { ...listenrs, ...emits };

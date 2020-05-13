@@ -6,4 +6,8 @@ const checkLoggedInUser = (socket, callback) => {
   });
 };
 
+// CONSTANTS
+const MOVE_TIMEOUT = 10;
+const BOARD_TIMEOUT = 60;
+
 module.exports = { checkLoggedInUser };
