@@ -7,6 +7,7 @@ const {
   JOIN_ROOM,
   MEMBER_LEFT,
   MEMBER_JOINED,
+  YOU_ARE_HOST,
 } = require("./events");
 const { authenticateSocket } = require("./../middlewares/authenticate");
 const { Room } = require("../database/models/models");
@@ -36,35 +37,88 @@ const connectSockets = (server) => {
             if (doc != null) {
               // if number of room members is more than 1, it means someone is still in the room
               if (doc.users.length > 1) {
-                // pulling out the user from the room
-                Room.updateOne(
-                  { "users.id": socket.user._id },
-                  {
-                    $pull: {
-                      users: { id: socket.user._id.toString() },
-                    },
-                  }
-                )
-                  .then((doc) => {
-                    if (doc != null) {
-                      // TODO: remove this console statement after testing
-                      console.log(`${socket.user.name} disconnected`);
-                      // Notifing the members that the user left
-                      socket.to(socket.roomName).broadcast.emit(MEMBER_LEFT, {
-                        status: 200,
-                        user: {
-                          id: socket.user._id,
-                          name: socket.user.name,
-                          avatar: socket.user.avatar,
-                        },
-                      });
-                    } else {
-                      console.log("Error while removing user from db", err);
+                // Checking if the user left was host or not
+                if (doc.host === socket.user._id) {
+                  // fetching a new host
+                  var newHost = {};
+                  doc.users.forEach((user) => {
+                    if (user._id != socket._id) {
+                      newHost._id = user._id;
+                      newHost.socketID = user.socketID;
+                      break;
                     }
-                  })
-                  .catch((err) => {
-                    console.log("Error while updating:", doc);
                   });
+                  // pulling out the user from the room & setting up new host
+                  Room.updateOne(
+                    { "users.id": socket.user._id, host: socket.user._id },
+                    {
+                      $pull: {
+                        users: { id: socket.user._id.toString() },
+                      },
+                      $set: {
+                        host: newHost._id,
+                      },
+                    }
+                  )
+                    .then((newDoc) => {
+                      if (newDoc != null) {
+                        // TODO: remove this console statement after testing
+                        console.log(`${socket.user.name} disconnected`);
+
+                        // Notifing the members that the user left
+                        socket.to(socket.roomName).broadcast.emit(MEMBER_LEFT, {
+                          status: 200,
+                          user: {
+                            id: socket.user._id,
+                            name: socket.user.name,
+                            avatar: socket.user.avatar,
+                          },
+                        });
+
+                        // Emitting the new host that you are host now
+                        io.to(newHost.socketID).emit(YOU_ARE_HOST, {
+                          status: 200,
+                          message: "You are host now!",
+                        });
+                      } else {
+                        console.log("Error while removing user from db", err);
+                      }
+                    })
+                    .catch((err) => {
+                      console.log("Error while updating:", doc);
+                    });
+                } else {
+                  // pulling out the user from the room
+                  Room.updateOne(
+                    { "users.id": socket.user._id },
+                    {
+                      $pull: {
+                        users: { id: socket.user._id.toString() },
+                      },
+                    }
+                  )
+                    .then((doc) => {
+                      if (doc != null) {
+                        // TODO: remove this console statement after testing
+                        console.log(`${socket.user.name} disconnected`);
+
+                        // Notifing the members that the user left
+                        socket.to(socket.roomName).broadcast.emit(MEMBER_LEFT, {
+                          status: 200,
+                          user: {
+                            id: socket.user._id,
+                            name: socket.user.name,
+                            avatar: socket.user.avatar,
+                          },
+                        });
+                      } else {
+                        console.log("Error while removing user from db", err);
+                      }
+                    })
+                    .catch((err) => {
+                      console.log("Error while updating:", doc);
+                    });
+                }
               } else {
                 // If user was the last member of the room, we free up space by deleting the room.
                 Room.deleteOne({ _id: doc._id })
@@ -117,7 +171,12 @@ const connectSockets = (server) => {
                       roomName: randomRoom,
                       host: user._id,
                       users: [
-                        { id: user._id, name: user.name, avatar: user.avatar, socketID: socket.id },
+                        {
+                          id: user._id,
+                          name: user.name,
+                          avatar: user.avatar,
+                          socketID: socket.id,
+                        },
                       ],
                     });
                     room
