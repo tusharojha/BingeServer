@@ -38,25 +38,18 @@ const connectSockets = (server) => {
               // if number of room members is more than 1, it means someone is still in the room
               if (doc.users.length > 1) {
                 // Checking if the user left was host or not
-                if (doc.host === socket.user._id) {
+                if (doc.host === socket.user._id.toString()) {
                   // fetching a new host
-                  var newHost = {};
-                  doc.users.forEach((user) => {
-                    if (user._id != socket._id) {
-                      newHost._id = user._id;
-                      newHost.socketID = user.socketID;
-                      break;
-                    }
-                  });
+                  var newHost = doc.users.filter((item)=>(item.id != socket.user._id.toString()));
                   // pulling out the user from the room & setting up new host
                   Room.updateOne(
-                    { "users.id": socket.user._id, host: socket.user._id },
+                    { "users.id": socket.user._id, host: socket.user._id.toString() },
                     {
                       $pull: {
                         users: { id: socket.user._id.toString() },
                       },
                       $set: {
-                        host: newHost._id,
+                        host: newHost[0].id,
                       },
                     }
                   )
@@ -76,7 +69,7 @@ const connectSockets = (server) => {
                         });
 
                         // Emitting the new host that you are host now
-                        io.to(newHost.socketID).emit(YOU_ARE_HOST, {
+                        io.to(newHost[0].socketID).emit(YOU_ARE_HOST, {
                           status: 200,
                           message: "You are host now!",
                         });
