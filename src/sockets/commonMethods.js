@@ -6,8 +6,19 @@ const checkLoggedInUser = (socket, callback) => {
   });
 };
 
+const whoIsNext = (id, users) => {
+  const index = users.findIndex((user)=>user.id === id);
+  var nextIndex;
+  if(users.length === (index+1)){
+    nextIndex = 0;
+  }else{
+    nextIndex = index + 1;
+  }
+  return users[nextIndex];
+};
+
 // CONSTANTS
 const MOVE_TIMEOUT = 10;
 const BOARD_TIMEOUT = 60;
 
-module.exports = { checkLoggedInUser };
+module.exports = { checkLoggedInUser, whoIsNext };

@@ -1,11 +1,25 @@
 // Project Imports
-const { START_GAME, GAME_STARTED, BOARD_SET_TIMEOUT, FIRST_MOVE } = require("./../events");
-const { checkLoggedInUser, MOVE_TIMEOUT, BOARD_TIMEOUT } = require("./../commonMethods");
+const {
+  START_GAME,
+  GAME_STARTED,
+  BOARD_SET_TIMEOUT,
+  FIRST_MOVE,
+  NEXT_MOVE,
+  YOUR_MOVE,
+  CROSS_NUMBER,
+} = require("./../events");
+const {
+  checkLoggedInUser,
+  whoIsNext,
+  MOVE_TIMEOUT,
+  BOARD_TIMEOUT,
+} = require("./../commonMethods");
 const { Room } = require("./../../database/models/models");
 
 const SocketRoutes = (socket, io) => {
   // Socket Route to start the game (this route will be called by host only)
   socket.on(START_GAME, (data, callback) => {
+    // Expected data: {roomName: '29389293'}
     checkLoggedInUser(socket, callback)
       .then(() => {
         Room.findOneAndUpdate(
@@ -47,12 +61,78 @@ const SocketRoutes = (socket, io) => {
                   message: "Board is set, Now it's your move",
                   timeout: MOVE_TIMEOUT,
                 });
-              }, BOARD_TIMEOUT * 1000);
+              }, 60 * 1000);
             }
           })
           .catch((err) => {
             console.log("START_GAME_Error:", err);
           });
+      })
+      .catch((err) => console.log(err));
+  });
+
+  // Socket Route for next move
+  socket.on(NEXT_MOVE, (data, callback) => {
+    // Expected data: {roomName: '29389293', crossNumber: 12}
+    checkLoggedInUser(socket, callback)
+      .then(() => {
+        if (data.crossNumber != null && data.roomName != null) {
+          const crossNumber = Number.parseInt(data.crossNumber);
+          Room.findOneAndUpdate(
+            {
+              roomName: data.roomName,
+              "users.id": socket.user._id.toString(),
+              idle: false,
+            },
+            {
+              $pull: {
+                remainingNumbers: crossNumber,
+              },
+            }
+          )
+            .then((doc) => {
+              if (doc != null) {
+                if (doc.remainingNumbers.includes(crossNumber)) {
+                  // Number was present in the remaining list before i.e. everything is fine
+                  // Broadcasting user's move to other members
+                  socket.broadcast.emit(CROSS_NUMBER, {
+                    status: 200,
+                    crossNumber: crossNumber,
+                    user: {
+                      id: socket.user._id,
+                      name: socket.user.name,
+                      avatar: socket.user.avatar,
+                    },
+                  });
+                  // fetching next user whose turn is this
+                  const nextUser = whoIsNext(
+                    socket.user._id.toString(),
+                    doc.users
+                  );
+                  // emiting to the user about his turn
+                  io.to(nextUser.socketID).emit(YOUR_MOVE, {
+                    status: 200,
+                    message: "It's your turn",
+                  });
+                } else {
+                  // Number was not present in the remaining list before i.e. someone already crossed it
+                  callback({
+                    status: 400,
+                    message: "number was already crossed",
+                  });
+                  console.log({
+                    status: 400,
+                    message: "number was already crossed",
+                  });
+                }
+              }
+            })
+            .catch((err) => {
+              console.log("ERROR_UPDATING_MOVE:", err);
+            });
+        } else {
+          callback({ status: 400, message: "bad request" });
+        }
       })
       .catch((err) => console.log(err));
   });
