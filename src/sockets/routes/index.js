@@ -7,6 +7,7 @@ const {
   NEXT_MOVE,
   YOUR_MOVE,
   CROSS_NUMBER,
+  SKIP_MOVE,
 } = require("./../events");
 const {
   checkLoggedInUser,
@@ -71,6 +72,39 @@ const SocketRoutes = (socket, io) => {
       .catch((err) => console.log(err));
   });
 
+  // Socket Route for skipping move
+  socket.on(SKIP_MOVE, (data, callback) => {
+    // Expected data: {roomName: '29389293'}
+    checkLoggedInUser(socket, callback)
+      .then(() => {
+        if (data.roomName != null) {
+          Room.findOne({ roomName: data.roomName })
+            .then((doc) => {
+              if (doc != null) {
+                // fetching next user whose turn is this
+                const nextUser = whoIsNext(
+                  socket.user._id.toString(),
+                  doc.users
+                );
+                // emiting to the user about his turn
+                io.to(nextUser.socketID).emit(YOUR_MOVE, {
+                  status: 200,
+                  message: "It's your turn",
+                });
+              } else {
+                callback({ status: 500, message: "Internal Server Error" });
+              }
+            })
+            .catch((err) => {
+              console.log("FINDING_ROOM_SKIP_MOVE ERROR:", err);
+            });
+        } else {
+          callback({ status: 400, message: "bad request" });
+        }
+      })
+      .catch((err) => console.log("SKIP_MOVE ERROR:", err));
+  });
+
   // Socket Route for next move
   socket.on(NEXT_MOVE, (data, callback) => {
     // Expected data: {roomName: '29389293', crossNumber: 12}
@@ -125,6 +159,8 @@ const SocketRoutes = (socket, io) => {
                     message: "number was already crossed",
                   });
                 }
+              } else {
+                callback({ status: 500, message: "Internal Server Error" });
               }
             })
             .catch((err) => {

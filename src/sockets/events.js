@@ -4,6 +4,7 @@ const listenrs = {
   JOIN_ROOM: "join room",
   START_GAME: "start game",
   NEXT_MOVE: "next move",
+  SKIP_MOVE: "skip move",
 };
 
 const emits = {
