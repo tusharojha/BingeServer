@@ -8,6 +8,8 @@ const {
   YOUR_MOVE,
   CROSS_NUMBER,
   SKIP_MOVE,
+  WINNING_MOVE,
+  WINNER_ANOUNCE,
 } = require("./../events");
 const {
   checkLoggedInUser,
@@ -68,6 +70,42 @@ const SocketRoutes = (socket, io) => {
           .catch((err) => {
             console.log("START_GAME_Error:", err);
           });
+      })
+      .catch((err) => console.log(err));
+  });
+
+  // Socket Route for winning move
+  socket.on(WINNING_MOVE, (data, callback) => {
+    /* expected data : {roomName: '65342312', board: [
+       [1, 2, 3, 4, 6],
+       [7, 8, 9 ,10 ,11],
+       [12, 13, 14, 15, 16],
+       [17, 18, 19, 20, 21],
+       [22, 23, 24, 25, 5]]
+      */
+    checkLoggedInUser(socket, callback)
+      .then(() => {
+        if (data.roomName != null && data.board != null) {
+          Room.findOne({
+            roomName: data.roomName,
+            "users.id": socket.user._id.toString(),
+          }).then((doc) => {
+            if (doc != null) {
+              io.to(data.roomName).emit(WINNER_ANOUNCE, {
+                winner: {
+                  id: socket.user._id,
+                  name: socket.user.name,
+                  avatar: socket.user.avatar,
+                },
+                board: data.board,
+              });
+            } else {
+              callback({ status: 500, message: "Internal Server Error" });
+            }
+          });
+        } else {
+          callback({ status: 400, message: "Bad Request" });
+        }
       })
       .catch((err) => console.log(err));
   });

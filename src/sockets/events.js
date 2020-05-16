@@ -16,6 +16,7 @@ const emits = {
   FIRST_MOVE: "first move",
   YOUR_MOVE: "your move",
   CROSS_NUMBER: "cross number",
+  WINNER_ANOUNCE: "winner anounce",
 };
 
 module.exports = { ...listenrs, ...emits };
