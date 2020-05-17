@@ -10,7 +10,8 @@ const connectDB = () => {
       useCreateIndex: true,
       useFindAndModify: false,
     })
-    .then(() => console.log("Connected to MongoDB"));
+    .then(() => console.log("Connected to MongoDB"))
+    .catch((err) => console.log("Error connecting to MongoDB:", err));
 };
 
 module.exports = { connectDB };
