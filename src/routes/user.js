@@ -11,6 +11,13 @@ const {
 
 const router = express.Router();
 
+router.get("/", authenticate, (req, res) => {
+  res
+    .status(201)
+    .header("x-auth", req.token)
+    .send(_.pick(req.user, ["name", "avatar", "bingeStars"]));
+});
+
 router.post("/", authenticateSource, (req, res) => {
   const { name, avatar, fcmToken } = _.pick(req.body, [
     "name",

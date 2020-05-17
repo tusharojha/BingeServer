@@ -20,6 +20,10 @@ const UserSchema = mongoose.Schema({
     type: Number,
     default: 0
   },
+  bingeStars: {
+    type: Number,
+    default: 0,
+  },
   tokens: [{
     access: {
       type: String,
