@@ -1,4 +1,5 @@
 var { User } = require("./../database/models/models");
+var { TOKEN_ROUTES } = require("./../config/config");
 
 var authenticate = (req, res, next) => {
   var token = req.header("x-auth");
@@ -18,6 +19,14 @@ var authenticate = (req, res, next) => {
     });
 };
 
+var authenticateSource = (req, res, next) => {
+  if (req.body.token === TOKEN_ROUTES) {
+    next();
+  } else {
+    res.status(401).send({ message: "unauthorised user" });
+  }
+};
+
 var authenticateSocket = (data) => {
   var token = data.token;
   return new Promise((resolve, reject) => {
@@ -34,4 +43,4 @@ var authenticateSocket = (data) => {
   });
 };
 
-module.exports = { authenticate, authenticateSocket };
+module.exports = { authenticate, authenticateSocket, authenticateSource };

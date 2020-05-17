@@ -4,11 +4,14 @@ const _ = require("lodash");
 
 // Project Imports
 const { User } = require("./../database/models/models");
-const { authenticate } = require("./../middlewares/authenticate");
+const {
+  authenticate,
+  authenticateSource,
+} = require("./../middlewares/authenticate");
 
 const router = express.Router();
 
-router.post("/", (req, res) => {
+router.post("/", authenticateSource, (req, res) => {
   const { name, avatar, fcmToken } = _.pick(req.body, [
     "name",
     "avatar",
@@ -51,9 +54,15 @@ router.patch("/", authenticate, (req, res) => {
       { new: true }
     ).then((doc) => {
       if (!doc) {
-        return res.status(401).header("x-auth", req.token).send({ message: "User is not identified" });
+        return res
+          .status(401)
+          .header("x-auth", req.token)
+          .send({ message: "User is not identified" });
       }
-      res.status(200).header("x-auth", req.token).send(_.pick(doc, ["name", "avatar"]));
+      res
+        .status(200)
+        .header("x-auth", req.token)
+        .send(_.pick(doc, ["name", "avatar"]));
     });
   });
 });
