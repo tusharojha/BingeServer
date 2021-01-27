@@ -36,7 +36,7 @@ router.post("/", authenticateSource, (req, res) => {
     .then((token) =>
       res
         .status(201)
-        .setHeader("x-auth", token)
+        .header("x-auth", token)
         .send(_.pick(user, ["_id", "name"]))
     )
     .catch((e) => res.status(400).send(e));
