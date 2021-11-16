@@ -40,7 +40,7 @@ const connectSockets = (server) => {
                 // Checking if the user left was host or not
                 if (doc.host === socket.user._id.toString()) {
                   // fetching a new host
-                  var newHost = doc.users.filter((item)=>(item.id != socket.user._id.toString()));
+                  var newHost = doc.users.filter((item) => (item.id != socket.user._id.toString()));
                   // pulling out the user from the room & setting up new host
                   Room.updateOne(
                     { "users.id": socket.user._id, host: socket.user._id.toString() },
@@ -149,55 +149,54 @@ const connectSockets = (server) => {
           var randomRoom = createRoomName();
           // check if room is not already taken
           if (
-            io.nsps["/"].adapter.rooms[randomRoom] === undefined ||
-            io.nsps["/"].adapter.rooms[randomRoom].length < 1
+            io.sockets.adapter.rooms[randomRoom] === undefined ||
+            io.sockets.adapter.rooms[randomRoom].length < 1
           ) {
             // checking if user was not already in a room
             Room.findOne({ "users.id": user._id.toString() }).then((doc) => {
               if (doc == null) {
                 // creating the room & saving to database
-                socket.join(randomRoom, (err) => {
-                  if (!err) {
-                    socket.user = user;
-                    socket.roomName = randomRoom;
-                    var room = Room({
-                      roomName: randomRoom,
-                      host: user._id,
-                      users: [
-                        {
-                          id: user._id,
-                          name: user.name,
-                          avatar: user.avatar,
-                          socketID: socket.id,
-                        },
-                      ],
-                    });
-                    room
-                      .save()
-                      .then(() => {
-                        console.log("ROOM CREATED: ", randomRoom);
-                        callback({
-                          status: 201,
-                          message: "New room created",
-                          data: {
-                            roomName: randomRoom,
-                            user: {
-                              id: user._id,
-                              name: user.name,
-                              avatar: user.avatar,
-                            },
+                const err = socket.join(randomRoom);
+                if (!err) {
+                  socket.user = user;
+                  socket.roomName = randomRoom;
+                  var room = Room({
+                    roomName: randomRoom,
+                    host: user._id,
+                    users: [
+                      {
+                        id: user._id,
+                        name: user.name,
+                        avatar: user.avatar,
+                        socketID: socket.id,
+                      },
+                    ],
+                  });
+                  room
+                    .save()
+                    .then(() => {
+                      console.log("ROOM CREATED: ", randomRoom);
+                      callback({
+                        status: 201,
+                        message: "New room created",
+                        data: {
+                          roomName: randomRoom,
+                          user: {
+                            id: user._id,
+                            name: user.name,
+                            avatar: user.avatar,
                           },
-                        });
-                      })
-                      .catch((err) => {
-                        console.log("Error: ", err);
-                        callback({ status: 501, message: err });
+                        },
                       });
-                  } else {
-                    console.log(err);
-                    callback({ status: 501, message: "Error creating room" });
-                  }
-                });
+                    })
+                    .catch((err) => {
+                      console.log("Error: ", err);
+                      callback({ status: 501, message: err });
+                    });
+                } else {
+                  console.log(err);
+                  callback({ status: 501, message: "Error creating room" });
+                }
               } else {
                 callback({ status: 400, message: "User is already in a room" });
               }
@@ -226,70 +225,69 @@ const connectSockets = (server) => {
             .then((doc) => {
               // checking for necessary conditions to enter room
               if (
-                io.nsps["/"].adapter.rooms[roomName] != undefined &&
+                io.sockets.adapter.rooms[roomName] != undefined &&
                 doc != null
               ) {
                 if (
-                  io.nsps["/"].adapter.rooms[roomName].length < 5 &&
+                  io.sockets.adapter.rooms[roomName].length < 5 &&
                   doc.users.length < 5
                 ) {
-                  socket.join(roomName, (err) => {
-                    if (!err) {
-                      // Add the user to the table
-                      Room.findOneAndUpdate(
-                        { roomName: roomName },
-                        {
-                          $addToSet: {
-                            users: {
-                              id: user._id,
-                              name: user.name,
-                              avatar: user.avatar,
-                              socketID: socket.id,
-                            },
+                  const err = socket.join(roomName);
+                  if (!err) {
+                    // Add the user to the table
+                    Room.findOneAndUpdate(
+                      { roomName: roomName },
+                      {
+                        $addToSet: {
+                          users: {
+                            id: user._id,
+                            name: user.name,
+                            avatar: user.avatar,
+                            socketID: socket.id,
                           },
                         },
-                        { new: true }
-                      )
-                        .then((newDoc) => {
-                          console.log("ROOM JOINED by ", user.name);
-                          socket.user = user;
-                          socket.roomName = roomName;
-                          // Notifies existing room members about the new joining
-                          socket.to(roomName).broadcast.emit(MEMBER_JOINED, {
-                            message: `${user.name} Joined`,
-                            user: {
-                              id: user._id,
-                              name: user.name,
-                              avatar: user.avatar,
-                            },
-                          });
-                          // send the list of users present in the room to the new user
-                          callback({
-                            status: 200,
-                            message: "Room Joined successfully",
-                            self: {
-                              id: user._id,
-                              name: user.name,
-                              avatar: user.avatar,
-                            },
-                            users: newDoc.users,
-                          });
-                        })
-                        .catch((err) => {
-                          console.log(err);
-                          callback({
-                            status: 500,
-                            message: "Internal Server Error",
-                          });
+                      },
+                      { new: true }
+                    )
+                      .then((newDoc) => {
+                        console.log("ROOM JOINED by ", user.name);
+                        socket.user = user;
+                        socket.roomName = roomName;
+                        // Notifies existing room members about the new joining
+                        socket.to(roomName).broadcast.emit(MEMBER_JOINED, {
+                          message: `${user.name} Joined`,
+                          user: {
+                            id: user._id,
+                            name: user.name,
+                            avatar: user.avatar,
+                          },
                         });
-                    } else {
-                      console.log(err);
-                      callback({
-                        status: 500,
-                        message: "Internal Server Error",
+                        // send the list of users present in the room to the new user
+                        callback({
+                          status: 200,
+                          message: "Room Joined successfully",
+                          self: {
+                            id: user._id,
+                            name: user.name,
+                            avatar: user.avatar,
+                          },
+                          users: newDoc.users,
+                        });
+                      })
+                      .catch((err) => {
+                        console.log(err);
+                        callback({
+                          status: 500,
+                          message: "Internal Server Error",
+                        });
                       });
-                    }
-                  });
+                  } else {
+                    console.log(err);
+                    callback({
+                      status: 500,
+                      message: "Internal Server Error",
+                    });
+                  }
                 } else {
                   // TODO: change console.log to callback
                   callback({ status: 403, message: "Room is already full" });
