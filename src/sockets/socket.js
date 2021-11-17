@@ -224,12 +224,11 @@ const connectSockets = (server) => {
           Room.findOne({ roomName: roomName })
             .then((doc) => {
               // checking for necessary conditions to enter room
-              if (
-                io.sockets.adapter.rooms[roomName] != undefined &&
+              if (io.sockets.adapter.rooms.get(roomName) != null &&
                 doc != null
               ) {
                 if (
-                  io.sockets.adapter.rooms[roomName].length < 5 &&
+                  io.sockets.adapter.rooms.get(roomName).size < 5 &&
                   doc.users.length < 5
                 ) {
                   const err = socket.join(roomName);
@@ -254,7 +253,8 @@ const connectSockets = (server) => {
                         socket.user = user;
                         socket.roomName = roomName;
                         // Notifies existing room members about the new joining
-                        socket.to(roomName).broadcast.emit(MEMBER_JOINED, {
+                        socket.to(roomName).emit(MEMBER_JOINED, {
+                          status: 200,
                           message: `${user.name} Joined`,
                           user: {
                             id: user._id,
