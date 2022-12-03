@@ -1,5 +1,5 @@
 # Binge Server
-Server side application of Binge: A Bingo Game! 
+Server side application of the amazing Binge: The Bingo Game! 
 
 Developed to have high speed, high security & low space requirement to deliver millions of users.
 
