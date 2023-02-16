@@ -3,7 +3,7 @@ Server side application of the amazing Binge: The Bingo Game!
 
 Developed to have high speed, high security & low space requirement to deliver millions of users.
 
-Powered by Node.JS & MongoDB
+Powered by Node.JS & MongoDB.
 
 ## Installing
 - Clone repository on your local machine
