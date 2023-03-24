@@ -12,3 +12,5 @@ Powered by Node.JS & MongoDB.
 
 ### NOTE
 `Make sure to update config.js file before running`
+
+Built by Tushar Ojha
