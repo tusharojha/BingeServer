@@ -11,6 +11,6 @@ Powered by Node.JS & MongoDB.
 - Run npm start to start the server
 
 ### NOTE
-`Make sure to update config.js file before running`
+`Make sure to update config.js file before running`.
 
 Built by Tushar Ojha.
